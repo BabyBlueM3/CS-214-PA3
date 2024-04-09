@@ -14,24 +14,6 @@
 #define MAX_ARGS 64
 
 
-void interactiveMode(const char *filename)
-{ // Interactivemode is when the programming is using the terminal and the commands the user inputs.
-
-    int fd = open(filename, O_RDONLY);
-    int isattyResult = isatty(fd);
-
-    if (isattyResult == 1)
-    {
-        printf("Welcome to my shell!\n");
-    }
-}
-
-void batchMode(const char *filename)
-{ // Batchmode is when there is 1 argument in the command and that is the file that will be read.
-
-    int fd = open(filename, O_RDONLY);
-    int isattyResult = isatty(fd);
-}
 
 int main(int argc, char *argv[])
 {
@@ -53,17 +35,21 @@ int main(int argc, char *argv[])
     }
     else if (argc == 1)
     {
-        interactiveMode(filename);
+    int isattyResult = isatty(fd);
+        if(isattyResult == 1){
+            interactive_mode(filename); // Interactivemode is when the programming is using the terminal and the commands the user inputs.
+        }
+        if(isattyResult == 0){
+            batch_mode(filename); // Batchmode is when there is 1 argument in the command and that is the file that will be read.
+        }
     }
     else if (argc == 2)
     {
-        batchMode(filename);
+        batch_mode(filename); // Batchmode is when there is 1 argument in the command and that is the file that will be read.
     }
 
     return EXIT_SUCCESS;
 }
-
-// Mark
 
 void welcome_message()
 {
@@ -141,7 +127,7 @@ void process_wildcard(char *pattern, char *args[], int *arg_count)
 
     while ((entry = readdir(dir)) != NULL)
     {
-        if (fnmatch(pattern, entry->d_name, FNM_PATHNAME) == 0 && entry->d_name[0] != '.')
+        if (fnmatch(pattern, entry->d_name, FNM_PERIOD) == 0 && entry->d_name[0] != '.')
         {
             args[(*arg_count)++] = strdup(entry->d_name);
         }
@@ -304,11 +290,12 @@ void process_command(char *command)
 void interactive_mode()
 {
     welcome_message();
+    
     char command[MAX_COMMAND_LENGTH];
     while (1)
     {
         prompt();
-        if (fgets(command, sizeof(command), stdin) == NULL)
+        if (read(command, sizeof(command), stdin) == NULL)
         {
             // End of input stream
             break;
@@ -332,7 +319,7 @@ void batch_mode(char *filename)
     }
 
     char line[MAX_COMMAND_LENGTH];
-    while (fgets(line, sizeof(line), batch_file) != NULL)
+    while (read(line, sizeof(line), batch_file) != NULL)
     {
         process_command(line);
     }
